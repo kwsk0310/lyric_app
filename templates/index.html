@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>中日歌詞下載網站</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <style>
+      .center {
+        text-align: center;
+      }
+      .pointer {
+        cursor: pointer;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="center container">
+      <div>
+        <h1 class="mt-5 mb-2">歡迎來到歌詞下載網站</h1>
+        <form>
+            <label class="mx-1">
+                <input type="radio" name="web" value="KKBox" checked>KKBox
+            </label>
+            <label class="mx-1">
+                <input type="radio" name="web" value="UtaTen">UtaTen
+            </label>
+            <label class="mx-1">
+                <input type="radio" name="web" value="UtaMap">UtaMap
+            </label>
+            <label class="mx-1">
+                <input type="radio" name="web" value="UtaNet">UtaNet
+            </label>
+          
+            <div class="form-group mx-sm-8 mb-2">
+                <input 
+                type="text"
+                class="form-control border border-secondary"
+                id="songName"
+                name="songName"
+                placeholder="請輸入歌名"
+                onkeydown="if (event.key === 'Enter') getSongs(event)"
+                autofocus
+                />
+            </div>
+        </form>
+      </div>
+    </div>
+
+    <div class=container>
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th scope="col">歌曲名稱</th>
+            <th scope="col">創作者</th>
+          </tr>
+        </thead>
+        <tbody id="songList">
+        </tbody>
+      </table>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/js/all.min.js"></script>
+    <script>
+        function getSongs(event) {
+            event.preventDefault();  // 防止表單提交或其他預設行為
+            const songName = document.getElementById('songName').value;
+            const web = document.querySelector('input[name="web"]:checked').value;
+            fetch('/get-songList',{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    web: web,
+                    songName: songName,
+                })
+            }).then(response => response.json())
+            .then(data => {
+                var songListElement = document.getElementById("songList");
+                songListElement.innerHTML = '';
+
+                // 如果有返回歌曲列表，將其顯示在頁面上
+                if (data.songList && data.songList.length > 0) {
+                    data.songList.forEach(function(song) {
+                        // 在這裡創建一個新的 tr 元素
+                        var listItem = document.createElement("tr");
+
+                        // 設置該 tr 元素的內容
+                        listItem.innerHTML = `
+                            <td>${song.song}</td>
+                            <td>${song.singer}</td>
+                        `;
+
+                        // 為 tr 元素添加 class 和 onclick 事件
+                        listItem.classList.add("pointer");
+                        listItem.onclick = () => {getLyric(data.web, song.url, song.song);}
+
+                        // 把新創建的 tr 元素添加到歌單列表中
+                        songListElement.appendChild(listItem);
+                    });
+                }
+            })
+        }
+
+        function getLyric(web, url, songName){
+            const data = {web: web,
+                    url: url,
+                    songName: songName,}
+            console.log(data);
+                    
+            fetch('/get-lyric',{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    web: web,
+                    url: url,
+                    songName: songName,
+                })
+            }).then(response => response.json())
+            .then(data => {
+                window.location.href = `/lyrics?songName=${encodeURIComponent(data.songName)}&lyric=${encodeURIComponent(data.lyric)}`;
+            })
+        }
+    </script>
+  </body>
+</html>
